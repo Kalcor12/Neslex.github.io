@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neslex - Carrito de Compras</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Playfair+Display:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-image: url('https://images.unsplash.com/photo-1483985988355-763728e1935b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-blend-mode: overlay;
+            background-color: rgba(255, 255, 255, 0.85);
+        }
+        .font-display {
+            font-family: 'Playfair Display', serif;
+        }
+        .bg-section {
+            background-color: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(4px);
+        }
+        .bg-dark-section {
+            background-color: rgba(31, 41, 55, 0.92);
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+<header class="bg-white shadow-md sticky top-0 z-50">
+    <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+        <a href="index.html" class="text-3xl font-bold text-gray-900 font-display tracking-tight">Neslex</a>
+        <a href="index.html" class="text-lg font-semibold text-gray-600 hover:text-gray-900 transition duration-300 uppercase tracking-wider">Volver a la tienda</a>
+    </nav>
+</header>
+
+<main class="min-h-screen py-16 bg-section">
+    <div class="container mx-auto px-6">
+        <h1 class="text-4xl md:text-5xl font-bold text-gray-900 font-display text-center mb-12">Tu Carrito de Compras</h1>
+
+        <div id="carrito-vacio" class="text-center text-gray-600 text-xl hidden">
+            <p>Tu carrito está vacío. ¡Empieza a llenarlo con tus prendas favoritas!</p>
+            <a href="index.html#productos" class="mt-8 inline-block bg-gray-900 text-white font-bold py-3 px-8 rounded-lg shadow-md hover:bg-gray-800 transition duration-300">
+                Ir a Productos
+            </a>
+        </div>
+
+        <div id="carrito-lleno" class="hidden">
+            <div id="lista-productos-carrito" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            </div>
+
+            <div class="mt-12 p-8 bg-white rounded-lg shadow-xl flex flex-col md:flex-row justify-between items-center">
+                <h2 class="font-bold text-2xl">Total: <span id="total-carrito" class="text-3xl font-bold text-gray-900 ">$0.00 MXN</span></h2>
+                <button id="proceder-pago-btn" class="bg-green-600 text-white font-bold py-4 px-10 rounded-lg shadow-md hover:bg-green-700 transition duration-300 text-lg uppercase tracking-wider">
+                    Proceder al Pago
+                </button>
+            </div>
+
+            <div class="mt-8 text-center">
+                <button id="vaciar-carrito-btn" class="text-red-500 hover:text-red-700 font-semibold transition duration-300">
+                    Vaciar Carrito
+                </button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    const listaProductosCarrito = document.getElementById('lista-productos-carrito');
+    const totalCarritoSpan = document.getElementById('total-carrito');
+    const carritoVacioDiv = document.getElementById('carrito-vacio');
+    const carritoLlenoDiv = document.getElementById('carrito-lleno');
+    const vaciarCarritoBtn = document.getElementById('vaciar-carrito-btn');
+    const procederPagoBtn = document.getElementById('proceder-pago-btn'); // Nueva referencia al botón
+
+    function renderizarCarrito() {
+        let carrito = JSON.parse(localStorage.getItem('carritoNeslex')) || [];
+        listaProductosCarrito.innerHTML = ''; // Limpiar la lista antes de renderizar
+
+        if (carrito.length === 0) {
+            carritoVacioDiv.classList.remove('hidden');
+            carritoLlenoDiv.classList.add('hidden');
+            return;
+        } else {
+            carritoVacioDiv.classList.add('hidden');
+            carritoLlenoDiv.classList.remove('hidden');
+        }
+
+        let total = 0;
+
+        carrito.forEach(producto => {
+            const precioTotalProducto = producto.price * producto.quantity;
+            total += precioTotalProducto;
+
+            const productoDiv = document.createElement('div');
+            productoDiv.classList.add('bg-white', 'rounded-lg', 'shadow-xl', 'overflow-hidden', 'flex', 'flex-col', 'sm:flex-row');
+            productoDiv.innerHTML = `
+                    <img src="${producto.image}" alt="${producto.name}" class="w-full sm:w-40 h-48 sm:h-auto object-cover">
+                    <div class="p-6 flex-1 flex flex-col justify-between">
+                        <div>
+                            <h3 class="font-bold text-2xl mb-2">${producto.name}</h3>
+                            <p class="text-gray-600 mb-2">${producto.description}</p>
+                            <p class="text-gray-800 text-lg font-semibold">Precio Unitario: $${producto.price.toFixed(2)} MXN</p>
+                        </div>
+                        <div class="flex items-center mt-6">
+                            <label for="cantidad-${producto.name.replace(/\s/g, '-')}" class="mr-3 font-semibold">Cantidad:</label>
+                            <input type="number" id="cantidad-${producto.name.replace(/\s/g, '-')}"
+                                   min="1" value="${producto.quantity}"
+                                   onchange="actualizarCantidad('${producto.name}', this.value)"
+                                   class="w-20 p-2 border border-gray-300 rounded-md text-center">
+                            <button onclick="eliminarProducto('${producto.name}')" class="ml-auto text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-100 transition duration-300">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            listaProductosCarrito.appendChild(productoDiv);
+        });
+
+        totalCarritoSpan.textContent = `$${total.toFixed(2)} MXN`;
+    }
+
+
+    function actualizarCantidad(nombreProducto, nuevaCantidad) {
+        let carrito = JSON.parse(localStorage.getItem('carritoNeslex')) || [];
+        let cantidad = parseInt(nuevaCantidad);
+
+        if (isNaN(cantidad) || cantidad < 1) {
+            alert('La cantidad debe ser al menos 1.');
+            renderizarCarrito(); // Vuelve a renderizar para revertir el cambio inválido
+            return;
+        }
+
+        const productoIndex = carrito.findIndex(item => item.name === nombreProducto);
+        if (productoIndex > -1) {
+            carrito[productoIndex].quantity = cantidad;
+            localStorage.setItem('carritoNeslex', JSON.stringify(carrito));
+            renderizarCarrito();
+        }
+    }
+
+
+    function eliminarProducto(nombreProducto) {
+        let carrito = JSON.parse(localStorage.getItem('carritoNeslex')) || [];
+        carrito = carrito.filter(item => item.name !== nombreProducto);
+        localStorage.setItem('carritoNeslex', JSON.stringify(carrito));
+        renderizarCarrito();
+    }
+
+    vaciarCarritoBtn.addEventListener('click', () => {
+        if (confirm('¿Estás seguro de que quieres vaciar tu carrito?')) {
+            localStorage.removeItem('carritoNeslex');
+            renderizarCarrito();
+        }
+    });
+
+    procederPagoBtn.addEventListener('click', () => {
+        let carrito = JSON.parse(localStorage.getItem('carritoNeslex')) || [];
+        let mensajeWhatsApp = "¡Hola! Me gustaría hacer un pedido con los siguientes productos:\n\n";
+        let totalPedido = 0;
+
+        if (carrito.length === 0) {
+            alert("Tu carrito está vacío. No hay productos para el pedido.");
+            return;
+        }
+
+        carrito.forEach((producto, index) => {
+            const subtotal = producto.price * producto.quantity;
+            totalPedido += subtotal;
+            mensajeWhatsApp += `${index + 1}. *${producto.name}*\n`;
+            mensajeWhatsApp += `   Cantidad: ${producto.quantity}\n`;
+            mensajeWhatsApp += `   Precio Unitario: $${producto.price.toFixed(2)} MXN\n`;
+        });
+
+        mensajeWhatsApp += `-----------------------------------\n`;
+        mensajeWhatsApp += `*Total del pedido: $${totalPedido.toFixed(2)} MXN*\n\n`;
+        mensajeWhatsApp += `¡Espero tu confirmación!`;
+
+        const mensajeCodificado = encodeURIComponent(mensajeWhatsApp);
+
+        const numeroWhatsApp = '525538343088';
+        const urlWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${mensajeCodificado}`;
+
+        window.open(urlWhatsApp, '_blank');
+    });
+
+    document.addEventListener('DOMContentLoaded', renderizarCarrito);
+</script>
+
+</body>
+</html>
